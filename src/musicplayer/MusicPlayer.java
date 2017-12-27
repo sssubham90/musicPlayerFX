@@ -13,8 +13,9 @@ import javafx.stage.Stage;
  */
 public class MusicPlayer extends Application{    
     
-    public static void main(String[] args){
+    public static int main(String[] args){
         launch(args);
+        return 0;
     }
     
     @Override
