@@ -124,6 +124,7 @@ public class Track{
         stop.setOnAction(eh->{
             if(mediaPlayer!=null){
                 mediaPlayer.seek(Duration.ZERO);
+                pos.setValue(0);
                 mediaPlayer.pause();
             }
         });
@@ -185,6 +186,7 @@ public class Track{
             album.setText("");
             artist.setText("");
             year.setText("");
+            beg.setText("00:00/00:00");
             mediaPlayer.dispose();
         });
         exit.addEventHandler(EventType.ROOT, eh->{if(exit()) player.close();});
@@ -209,7 +211,7 @@ public class Track{
            }
         });
         HBox.setHgrow(pos, Priority.ALWAYS);
-        beg=new Text();
+        beg=new Text("00:00/00:00");
         HBox scroller=new HBox(beg,pos);
         scroller.setPadding(new Insets(0, 5, 0, 5));
         title=new Label("Song");
