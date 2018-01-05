@@ -51,13 +51,14 @@ public class Track{
     private boolean atEndOfMedia;
     private boolean Repeat=false;
     private final FileChooser fileChooser;
+    private Playlist playList;
 
     public Track(Stage stage) {
         player=stage;
         fileChooser = new FileChooser();
     }
         
-    public Scene createScene(){
+    public Scene createScene(double width,double height){
         BorderPane parent=new BorderPane();
         parent.setTop(menuMaker());
         parent.setCenter(trackMaker());
@@ -68,7 +69,7 @@ public class Track{
         t.setFont(new Font(20));
         HBox.setHgrow(left, Priority.ALWAYS);
         HBox.setHgrow(right, Priority.ALWAYS);
-        scene =new Scene(parent);
+        scene =new Scene(parent,width,height);
         resizeListener();
         return scene;
     }
@@ -79,10 +80,10 @@ public class Track{
             display.setFitWidth(scene.getWidth());
         });
         scene.heightProperty().addListener(cl->{
-            display.setFitHeight(scene.getHeight()-175);
+            display.setFitHeight(scene.getHeight()-190);
         });
     }
-
+    
     public boolean exit(){
         return ConfirmationBox.show("Are you sure you want to exit MusicPlayer?", "Exit!", "Yes", "No");
     }
@@ -180,14 +181,14 @@ public class Track{
         });
         close.addEventHandler(EventType.ROOT, eh->{
             mediaPlayer.stop();
-            beg.setText("");
+            mediaPlayer.dispose();
             display.setImage(new Image("file:///C:/Users/KIIT/Documents/NetBeansProjects/MusicPlayer/img/1.jpg"));
             title.setText("Song");
             album.setText("");
             artist.setText("");
             year.setText("");
             beg.setText("00:00/00:00");
-            mediaPlayer.dispose();
+            System.gc();
         });
         exit.addEventHandler(EventType.ROOT, eh->{if(exit()) player.close();});
         Menu file=new Menu("File");
@@ -199,6 +200,14 @@ public class Track{
     }
 
     public VBox trackMaker(){
+        Button playlist = new Button("Playlist");
+        playlist.setOnAction(eh->{
+            playList = new Playlist(player);
+            player.setScene(playList.createScene(scene.getWidth(),scene.getHeight()));
+        });
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        HBox switcher = new HBox(spacer,playlist);
         display=new ImageView(new Image(new File("C:\\Users\\KIIT\\Documents\\NetBeansProjects\\MusicPlayer\\img\\1.jpg").toURI().toString()));
         display.setFitHeight(250);
         display.setFitWidth(500);
@@ -229,11 +238,12 @@ public class Track{
         year.setFont(f);
         VBox track=new VBox();
         track.setStyle("-fx-background-color: #ffff00;");
-        track.getChildren().addAll(display,scroller,title,album,artist,year);
+        track.getChildren().addAll(switcher,display,scroller,title,album,artist,year);
         return track;
     }
 
     public void openFile(File file) {
+        System.gc();
         media=new Media(file.toURI().toString());
         ObservableMap<String,Object> meta_data=media.getMetadata();
 

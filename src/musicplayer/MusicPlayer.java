@@ -13,16 +13,15 @@ import javafx.stage.Stage;
  */
 public class MusicPlayer extends Application{    
     
-    public static int main(String[] args){
+    public static void main(String[] args) {
         launch(args);
-        return 0;
     }
     
     @Override
     public void start(Stage stage) throws Exception {
         Track track=new Track(stage);
         stage.setTitle("Angel Music Player");
-        stage.setScene(track.createScene());
+        stage.setScene(track.createScene(500,440));
         stage.getIcons().add(new Image("file:///C:/Users/KIIT/Documents/NetBeansProjects/MusicPlayer/img/1.jpg"));
         stage.show();
     }
