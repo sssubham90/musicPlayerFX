@@ -22,6 +22,7 @@ public class MusicPlayer extends Application{
         Track track=new Track(stage);
         stage.setTitle("Angel Music Player");
         stage.setScene(track.createScene(500,440));
+        stage.setMinWidth(300);
         stage.getIcons().add(new Image("file:///C:/Users/KIIT/Documents/NetBeansProjects/MusicPlayer/img/1.jpg"));
         stage.show();
     }

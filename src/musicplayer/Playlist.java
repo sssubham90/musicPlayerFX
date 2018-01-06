@@ -8,6 +8,7 @@ package musicplayer;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -195,14 +196,14 @@ public class Playlist {
             return;
         }
         trackDetails.clear();
-        trackDetails.setTitle(files[counter-1].getName());
+        trackDetails.setTitle(files[counter-1].getName().substring(0,files[counter-1].getName().length()-4));
+        trackDetails.setFilePath(files[counter-1].getPath());
         mPlayer.setOnReady(() -> {
             try{
                 trackDetails.setAlbum(mPlayer.getMedia().getMetadata().get("album").toString());
                 trackDetails.setArtist(mPlayer.getMedia().getMetadata().get("artist").toString());
                 trackDetails.setTitle(mPlayer.getMedia().getMetadata().get("title").toString());
                 trackDetails.setYear(mPlayer.getMedia().getMetadata().get("year").toString());
-                trackDetails.setFilePath(files[counter-1].getPath());
             }
             catch(NullPointerException e){}
             addToList(trackDetails);
@@ -221,7 +222,12 @@ public class Playlist {
         MenuItem exit=new MenuItem("_Exit");
         chooser.addEventHandler(EventType.ROOT, eh->{
             File directory = directoryChooser.showDialog(player);
-            files=directory.listFiles();
+            files=directory.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    return pathname.toString().endsWith(".mp3");
+                }
+            });
             counter=0;
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File("config.txt")))) {
                 writer.write(directory.getAbsolutePath());

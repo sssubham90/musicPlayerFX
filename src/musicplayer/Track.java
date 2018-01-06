@@ -10,6 +10,7 @@ import javafx.application.Platform;
 import javafx.beans.Observable;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableMap;
+import javafx.event.EventHandler;
 import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,13 +20,19 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
+import javafx.scene.input.KeyCombination;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -52,6 +59,7 @@ public class Track{
     private boolean Repeat=false;
     private final FileChooser fileChooser;
     private Playlist playList;
+    private ProgressBar progress;
 
     public Track(Stage stage) {
         player=stage;
@@ -70,13 +78,16 @@ public class Track{
         HBox.setHgrow(left, Priority.ALWAYS);
         HBox.setHgrow(right, Priority.ALWAYS);
         scene =new Scene(parent,width,height);
+        progress.setMinWidth(scene.getWidth()-80);
+        progress.setMaxWidth(scene.getWidth()-80);
         resizeListener();
         return scene;
     }
 
     public void resizeListener(){
-
         scene.widthProperty().addListener(cl->{
+            progress.setMinWidth(scene.getWidth()-80);
+            progress.setMaxWidth(scene.getWidth()-80);
             display.setFitWidth(scene.getWidth());
         });
         scene.heightProperty().addListener(cl->{
@@ -126,6 +137,7 @@ public class Track{
             if(mediaPlayer!=null){
                 mediaPlayer.seek(Duration.ZERO);
                 pos.setValue(0);
+                beg.setText("00:00/00:00");
                 mediaPlayer.pause();
             }
         });
@@ -212,16 +224,25 @@ public class Track{
         display.setFitHeight(250);
         display.setFitWidth(500);
         display.setPreserveRatio(false);
+        progress=new ProgressBar(0);
         pos=new Slider();
         pos.setMax(600000);
         pos.valueProperty().addListener((Observable ov) -> {
             if (pos.isValueChanging()) {
-               mediaPlayer.seek(mediaPlayer.getMedia().getDuration().multiply(pos.getValue() / 600000.0));
-           }
+                try{
+                    mediaPlayer.seek(mediaPlayer.getMedia().getDuration().multiply(pos.getValue() / 600000.0));
+                }
+                catch(NullPointerException e){}
+                progress.setProgress(pos.getValue()/pos.getMax());
+            }
         });
+        progress.setMaxHeight(5);
+        progress.setMinHeight(5);
+        StackPane progressSlider = new StackPane(progress,pos);
         HBox.setHgrow(pos, Priority.ALWAYS);
+        HBox.setHgrow(progressSlider, Priority.ALWAYS);
         beg=new Text("00:00/00:00");
-        HBox scroller=new HBox(beg,pos);
+        HBox scroller=new HBox(beg,progressSlider);
         scroller.setPadding(new Insets(0, 5, 0, 5));
         title=new Label("Song");
         album=new Label();
@@ -238,43 +259,19 @@ public class Track{
         year.setFont(f);
         VBox track=new VBox();
         track.setStyle("-fx-background-color: #ffff00;");
+        track.getStylesheets().add("file:///C:/Users/KIIT/Documents/NetBeansProjects/MusicPlayer/img/style.css");
         track.getChildren().addAll(switcher,display,scroller,title,album,artist,year);
         return track;
     }
 
-    public void openFile(File file) {
+    public void openFile(File file){
         System.gc();
         media=new Media(file.toURI().toString());
-        ObservableMap<String,Object> meta_data=media.getMetadata();
-
-        meta_data.addListener((MapChangeListener.Change<? extends String, ? extends Object> ch) -> {
-            if(ch.wasAdded()){
-                String key=ch.getKey();
-                Object value=ch.getValueAdded();
-                switch(key){
-                    case "album":
-                        album.setText("Album: "+value.toString());
-                        break;
-                    case "artist":
-                        artist.setText("Artist: "+value.toString());
-                        break;
-                    case "title":
-                        title.setText(value.toString());
-                        break;
-                    case "year":
-                        year.setText("Year: "+value.toString());
-                        break;
-                    case "image":
-                        display.setImage((Image)value);
-                        break;
-                }
-            }
-        });
-        setMediaPlayer();
+        setMediaPlayer(file);
         mediaPlayer.play();
     }
 
-    public void setMediaPlayer(){
+    public void setMediaPlayer(File file){
         if(mediaPlayer!=null){
             mediaPlayer.stop();
             beg.setText("");
@@ -291,12 +288,26 @@ public class Track{
         mediaPlayer.setOnReady(() -> {
             updateValues();
         });
+        mediaPlayer.setOnPaused(() -> {
+            updateValues();
+        });
         mediaPlayer.setOnEndOfMedia(() -> {
             if(!Repeat){
                 mediaPlayer.seek(Duration.ZERO);
                 mediaPlayer.pause();
                 atEndOfMedia=true;
             }
+        });
+        mediaPlayer.setOnReady(()->{
+            title.setText(file.getName().substring(0,file.getName().length()-4));
+            try{
+                album.setText(media.getMetadata().get("album").toString());
+                artist.setText(media.getMetadata().get("artist").toString());
+                title.setText(media.getMetadata().get("title").toString());
+                year.setText(media.getMetadata().get("year").toString());
+                display.setImage((Image)media.getMetadata().get("image"));
+            }
+            catch(NullPointerException e){}
         });
     }
 
@@ -309,6 +320,7 @@ public class Track{
                 pos.setDisable(duration.isUnknown());
                 if (!pos.isDisabled()&&duration.greaterThan(Duration.ZERO)&&!pos.isValueChanging()) {
                     pos.setValue(currentTime.divide(duration).toMillis() * 600000.0);
+                    progress.setProgress(pos.getValue()/pos.getMax());
                 }
             });
         }
