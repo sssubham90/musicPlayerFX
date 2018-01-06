@@ -1,0 +1,2 @@
+.slider .track{-fx-background-color:#00000000;}
+.progress-bar .bar{-fx-background-insets: 0, 0, 0, 0; -fx-accent:#ff8500; -fx-border-radius:2,2,2,2;}

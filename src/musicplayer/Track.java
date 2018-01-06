@@ -60,6 +60,11 @@ public class Track{
     private final FileChooser fileChooser;
     private Playlist playList;
     private ProgressBar progress;
+    private Button pause;
+    private Button play;
+    private Button stop;
+    private Button fastfwd;
+    private Button repeat;
 
     public Track(Stage stage) {
         player=stage;
@@ -107,7 +112,11 @@ public class Track{
     }
 
     public HBox controlMaker(){
-        Button play=new Button("Play");
+        play=new Button("Play"); play.setStyle("-fx-background-color:#ffffff");
+        pause=new Button("Pause"); pause.setStyle("-fx-background-color:#ffffff");
+        stop=new Button("Stop"); stop.setStyle("-fx-background-color:#ffffff");
+        fastfwd=new Button("FF"); fastfwd.setStyle("-fx-background-color:#ffffff");
+        repeat=new Button("Repeat"); repeat.setStyle("-fx-background-color:#ffffff");
         play.setOnAction(eh->{
             if(mediaPlayer!=null){
                 MediaPlayer.Status status = mediaPlayer.getStatus();
@@ -121,18 +130,18 @@ public class Track{
                     }
                     mediaPlayer.setRate(1.0);
                     mediaPlayer.play();
-                } 
-                else{
-                    mediaPlayer.pause();
                 }
             }
         });
-        Button pause=new Button("Pause");
         pause.setOnAction(eh->{
-            if(mediaPlayer!=null)
+            MediaPlayer.Status status = mediaPlayer.getStatus();
+            if (status == MediaPlayer.Status.UNKNOWN||status == MediaPlayer.Status.HALTED||status == MediaPlayer.Status.PAUSED){
+                    return;
+            }
+            if(mediaPlayer!=null){
                 mediaPlayer.pause();
+            }
         });
-        Button stop=new Button("Stop");
         stop.setOnAction(eh->{
             if(mediaPlayer!=null){
                 mediaPlayer.seek(Duration.ZERO);
@@ -141,11 +150,15 @@ public class Track{
                 mediaPlayer.pause();
             }
         });
-        Button fastfwd=new Button("FF");
-        fastfwd.setOnAction(eh->mediaPlayer.setRate(mediaPlayer.getRate()!=8?mediaPlayer.getRate()*2:1.0));
-        Button repeat=new Button("Repeat");
+        fastfwd.setOnAction(eh->{
+            if(mediaPlayer.getRate()!=8)fastfwd.setStyle("-fx-background-color:#ffff00");
+            else fastfwd.setStyle("-fx-background-color:#ffffff");
+            mediaPlayer.setRate(mediaPlayer.getRate()!=8?mediaPlayer.getRate()*2:1.0);
+        });
         repeat.setOnAction(eh->{
             Repeat=!Repeat;
+            if(Repeat) repeat.setStyle("-fx-background-color:#ffff00");
+            else repeat.setStyle("-fx-background-color:#ffffff");
             if(mediaPlayer!=null)
                 mediaPlayer.setCycleCount(Repeat ? MediaPlayer.INDEFINITE : 1);        
         });
@@ -192,7 +205,6 @@ public class Track{
                 }
         });
         close.addEventHandler(EventType.ROOT, eh->{
-            mediaPlayer.stop();
             mediaPlayer.dispose();
             display.setImage(new Image("file:///C:/Users/KIIT/Documents/NetBeansProjects/MusicPlayer/img/1.jpg"));
             title.setText("Song");
@@ -200,6 +212,13 @@ public class Track{
             artist.setText("");
             year.setText("");
             beg.setText("00:00/00:00");
+            pos.setValue(0);
+            progress.setProgress(0);
+            play.setStyle("-fx-background-color:#ffffff");
+            pause.setStyle("-fx-background-color:#ffffff");
+            stop.setStyle("-fx-background-color:#ffffff");
+            fastfwd.setStyle("-fx-background-color:#ffffff");
+            repeat.setStyle("-fx-background-color:#ffffff");
             System.gc();
         });
         exit.addEventHandler(EventType.ROOT, eh->{if(exit()) player.close();});
@@ -213,6 +232,7 @@ public class Track{
 
     public VBox trackMaker(){
         Button playlist = new Button("Playlist");
+        playlist.setStyle("-fx-background-color:#ff7000;-fx-text-color:#ffffff;-fx-text-fill:#ffffff");
         playlist.setOnAction(eh->{
             playList = new Playlist(player);
             player.setScene(playList.createScene(scene.getWidth(),scene.getHeight()));
@@ -220,6 +240,7 @@ public class Track{
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         HBox switcher = new HBox(spacer,playlist);
+        switcher.setPadding(new Insets(2,4,2,4));
         display=new ImageView(new Image(new File("C:\\Users\\KIIT\\Documents\\NetBeansProjects\\MusicPlayer\\img\\1.jpg").toURI().toString()));
         display.setFitHeight(250);
         display.setFitWidth(500);
@@ -281,33 +302,49 @@ public class Track{
         }
         mediaPlayer=new MediaPlayer(media);
         mediaPlayer.setAutoPlay(false);
+        Repeat=Boolean.FALSE;
+        fastfwd.setStyle("-fx-background-color:#ffffff");
+        repeat.setStyle("-fx-background-color:#ffffff");
         mediaPlayer.setVolume(s.getValue()/100);
         mediaPlayer.currentTimeProperty().addListener((Observable ov) -> {
-            updateValues();
-        });
-        mediaPlayer.setOnReady(() -> {
-            updateValues();
-        });
-        mediaPlayer.setOnPaused(() -> {
             updateValues();
         });
         mediaPlayer.setOnEndOfMedia(() -> {
             if(!Repeat){
                 mediaPlayer.seek(Duration.ZERO);
                 mediaPlayer.pause();
+                pause.setStyle("");
                 atEndOfMedia=true;
             }
         });
         mediaPlayer.setOnReady(()->{
+            updateValues();
             title.setText(file.getName().substring(0,file.getName().length()-4));
             try{
                 album.setText(media.getMetadata().get("album").toString());
                 artist.setText(media.getMetadata().get("artist").toString());
                 title.setText(media.getMetadata().get("title").toString());
                 year.setText(media.getMetadata().get("year").toString());
-                display.setImage((Image)media.getMetadata().get("image"));
             }
             catch(NullPointerException e){}
+            if(media.getMetadata().get("image")!=null)
+                display.setImage((Image)media.getMetadata().get("image"));
+        });
+        mediaPlayer.setOnPlaying(() -> {
+            play.setStyle("-fx-background-color:#ffff00");
+            pause.setStyle("-fx-background-color:#ffffff");
+            stop.setStyle("-fx-background-color:#ffffff");
+        });
+        mediaPlayer.setOnPaused(() -> {
+            updateValues();
+            pause.setStyle("-fx-background-color:#ffff00");
+            play.setStyle("-fx-background-color:#ffffff");
+            stop.setStyle("-fx-background-color:#ffffff");
+        });
+        mediaPlayer.setOnStopped(() -> {
+            stop.setStyle("-fx-background-color:#ffff00");
+            play.setStyle("-fx-background-color:#ffffff");
+            pause.setStyle("-fx-background-color:#ffffff");
         });
     }
 
