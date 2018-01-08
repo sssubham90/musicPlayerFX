@@ -337,6 +337,7 @@ public class Track{
         });
         mediaPlayer.setOnPaused(() -> {
             updateValues();
+            fastfwd.setStyle("-fx-background-color:#ffffff");
             pause.setStyle("-fx-background-color:#ffff00");
             play.setStyle("-fx-background-color:#ffffff");
             stop.setStyle("-fx-background-color:#ffffff");
